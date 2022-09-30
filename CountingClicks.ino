@@ -52,9 +52,7 @@ void loop() {
         timeLimit = timeLimit - 100;
         tenClicksTimer = 0;
         Serial.printf("You made 10 clicks! Your new time limit is: %u milliseconds!", timeLimit);
-      }
-      ;    
+      }  
 	  }   
   }
 }
-
