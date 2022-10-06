@@ -3,6 +3,7 @@ int currentCLicks = 0;
 int tenClicksTimer = 0;
 long timeLimit = 1000000; //1 second in microsec
 bool disableTimer = false;
+bool disableTimerSay = false;
  
 hw_timer_t *My_timer = NULL;
 
@@ -30,8 +31,7 @@ void IRAM_ATTR isr() {
 
 void IRAM_ATTR onTimer(){
   if(currentCLicks > maxCLicks){
-    detachInterrupt(button.PIN);
-    Serial.printf("You exceeded the limit of clicks in 1 second! Max limit: %u times per second! Counter stopped!", maxCLicks); 
+    detachInterrupt(button.PIN); 
     disableTimer = true;       
   }
   else{
@@ -69,6 +69,9 @@ void loop() {
   }
   else{
     timerAlarmDisable(My_timer);
+    if(disableTimerSay == false){
+      Serial.printf("You exceeded the limit of clicks in 1 second! Max limit: %u times per second! Counter stopped!", maxCLicks);
+      disableTimerSay = true;      
+    }
   }
-
 }
