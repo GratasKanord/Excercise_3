@@ -1,9 +1,11 @@
 int maxCLicks = 2;
 int currentCLicks = 0;
 int tenClicksTimer = 0;
+long timeLimit = 1000000; //1 second in microsec
+bool disableTimer = false;
+ 
+hw_timer_t *My_timer = NULL;
 
-int timeLimit = 1000;
-long currentTime = 0;
 
 struct Button {
 	const uint8_t PIN;
@@ -26,33 +28,47 @@ void IRAM_ATTR isr() {
   }
 }
 
+void IRAM_ATTR onTimer(){
+  if(currentCLicks > maxCLicks){
+    detachInterrupt(button.PIN);
+    Serial.printf("You exceeded the limit of clicks in 1 second! Max limit: %u times per second! Counter stopped!", maxCLicks); 
+    disableTimer = true;       
+  }
+  else{
+    currentCLicks = 0;
+  }
+}
 
 void setup() { 
   Serial.begin(115200);
 	pinMode(button.PIN, INPUT_PULLUP);
 	attachInterrupt(button.PIN, isr, FALLING);
+  
+  // Creating timer
+  My_timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(My_timer, &onTimer, true);  
+  timerAlarmWrite(My_timer, timeLimit, true);
+  timerAlarmEnable(My_timer);
 } 
  
 void loop() {
-  currentCLicks = 0;
-  currentTime = millis();
-  while (millis() < (currentTime + timeLimit)){
+  if(!disableTimer){
     if (button.pressed) {
 		  Serial.printf("Button pressed: %u times\n", button.numberKeyPresses);
 		  button.pressed = false;
-      
       currentCLicks++;
-      if(currentCLicks > maxCLicks){
-        detachInterrupt(button.PIN);
-        Serial.printf("You exceeded the limit of clicks in 1 second! Max limit: %u times per second! Counter stopped!", maxCLicks);        
-      }
-      
       tenClicksTimer++;
+      
       if(tenClicksTimer == 10){
-        timeLimit = timeLimit - 100;
+        timeLimit -= 100000;
+        timerAlarmWrite(My_timer, timeLimit, true);
         tenClicksTimer = 0;
-        Serial.printf("You made 10 clicks! Your new time limit is: %u milliseconds!", timeLimit);
+        Serial.printf("You made 10 clicks! Your new time limit decreased on 100 milliseconds!");
       }  
-	  }   
+	  }
   }
+  else{
+    timerAlarmDisable(My_timer);
+  }
+
 }
